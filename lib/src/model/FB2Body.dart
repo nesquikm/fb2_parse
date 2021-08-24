@@ -18,10 +18,10 @@ class FB2Body {
     epigraph = RegExp(r"<epigraph>([\s\S]+?)<\/epigraph>").firstMatch(body)?.group(1);
 
     /// parse [sections]
-    final Iterable<RegExpMatch> _sections = RegExp(r"<section[\s\S]+?>([\s\S]+?)<\/section>").allMatches(body);
+    final Iterable<RegExpMatch> _sections = RegExp(r"<section([^>]*)>([\s\S]+?)<\/section>").allMatches(body);
     sections = [];
     for (var _section in _sections) {
-      sections!.add(FB2Section(_section.group(1)));
+      sections!.add(FB2Section(_section.group(2)));
     }
   }
 

@@ -1,6 +1,6 @@
 name: fb2_parse
 description: Flutter package for parsing fb2 files. Returns html content
-version: 1.0.0
+version: 1.0.1
 
 repository: https://github.com/kuthon/fb2_parse
 homepage: https://github.com/kuthon/fb2_parse

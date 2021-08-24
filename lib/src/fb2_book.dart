@@ -49,8 +49,13 @@ class FB2Book {
     });
 
     /// replacing the fb2 tag <empty-line/> with html tag <br>
-    res = res.replaceAllMapped(RegExp(r'<image([\s\S]+?)\/>'), (_) {
+    res = res.replaceAllMapped(RegExp(r'<empty-line.?>'), (_) {
       return '<br>';
+    });
+
+    /// remove the tag <a l:href ...>
+    res = res.replaceAllMapped(RegExp(r'<a ([a-zA-Z\:]*)href([\s\S]+?)>([\s\S]+?)<\/a>'), (match) {
+      return '${match.group(3)}';
     });
 
     /// parse [description]
