@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:archive/archive_io.dart';
 import 'package:fb2_parse/src/model/FB2Body.dart';
 import 'package:fb2_parse/src/model/FB2Description.dart';
 import 'package:fb2_parse/src/model/FB2Image.dart';
@@ -21,17 +22,28 @@ class FB2Book {
   late final List<FB2Image> images;
 
   FB2Book(this.path) {
-    RegExpMatch? match = RegExp(r"\.(\w+)$").firstMatch(path);
-    if (match?.group(1) != 'fb2') throw "Not FB2 file";
     file = File(path);
   }
 
   /// Parsing the book
   Future<void> parse() async {
-    String res = await file.readAsString();
+    final pathLower = path.toLowerCase();
+
+    var res = "";
+
+    if (pathLower.endsWith('.fbz') || pathLower.endsWith('.fb2.zip')) {
+      final archive = ZipDecoder().decodeBytes(await file.readAsBytes());
+      final fb2 = archive.files
+          .firstWhere((file) => file.name.toLowerCase().endsWith('.fb2'));
+      final bytes = fb2.content as List<int>;
+      res = String.fromCharCodes(bytes);
+    } else {
+      res = await file.readAsString();
+    }
 
     /// parse [images]
-    final Iterable<RegExpMatch> _images = RegExp(r'<binary[\s\S]+?>([\s\S]+?)<\/binary>').allMatches(res);
+    final Iterable<RegExpMatch> _images =
+        RegExp(r'<binary[\s\S]+?>([\s\S]+?)<\/binary>').allMatches(res);
     images = [];
     for (var image in _images) {
       images.add(FB2Image(image.group(0)!));
@@ -39,7 +51,9 @@ class FB2Book {
 
     /// replacing the fb2 tag <image ...> with html tag <img ...>
     res = res.replaceAllMapped(RegExp(r'<image([\s\S]+?)\/>'), (match) {
-      String name = RegExp(r'="#([\s\S]+?)"').firstMatch(match.group(1)!)?.group(1) as String;
+      String name = RegExp(r'="#([\s\S]+?)"')
+          .firstMatch(match.group(1)!)
+          ?.group(1) as String;
       FB2Image? currentImage;
       for (var image in images) {
         if (image.name == name) currentImage = image;
@@ -54,16 +68,20 @@ class FB2Book {
     });
 
     /// remove the tag <a l:href ...>
-    res = res.replaceAllMapped(RegExp(r'<a ([a-zA-Z\:]*)href([\s\S]+?)>([\s\S]+?)<\/a>'), (match) {
+    res = res.replaceAllMapped(
+        RegExp(r'<a ([a-zA-Z\:]*)href([\s\S]+?)>([\s\S]+?)<\/a>'), (match) {
       return '${match.group(3)}';
     });
 
     /// parse [description]
-    final String description = RegExp(r"<description>([\s\S]+)<\/description>").firstMatch(res)?.group(1) as String;
+    final String description = RegExp(r"<description>([\s\S]+)<\/description>")
+        .firstMatch(res)
+        ?.group(1) as String;
     this.description = FB2Description(description);
 
     /// parse [body]
-    final String body = RegExp(r"<body>([\s\S]+)<\/body>").firstMatch(res)?.group(1) as String;
+    final String body =
+        RegExp(r"<body>([\s\S]+)<\/body>").firstMatch(res)?.group(1) as String;
     this.body = FB2Body(body);
   }
 }
