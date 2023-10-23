@@ -1,5 +1,4 @@
 import 'package:fb2_parse/src/model/FB2Author.dart';
-import 'package:xml/xml.dart';
 
 class FB2Description {
   /// genres of books
